@@ -55,7 +55,7 @@ function cpuMove(s,difficulty){const depth=difficulty==='hard'?3:difficulty==='m
 
 
 const G={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟︎'};
-const ART={"K":"pieces/white_king.png","Q":"pieces/white_queen.png","R":"pieces/white_rook.png","B":"pieces/white_bishop.png","N":"pieces/white_knight.png","P":"pieces/white_pawn.png","k":"pieces/black_king.png","q":"pieces/black_queen.png","r":"pieces/black_rook.png","b":"pieces/black_bishop.png","n":"pieces/black_knight.png","p":"pieces/black_pawn.png"};
+const ART={"K":"pieces/white_king.png","Q":"pieces/white_queen.png","R":"pieces/white_rook.png","B":"pieces/white_bishop.png","N":"pieces/chrome_knight.png?v=4","P":"pieces/white_pawn.png","k":"pieces/black_king.png","q":"pieces/black_queen.png","r":"pieces/black_rook.png","b":"pieces/black_bishop.png","n":"pieces/black_knight.png?v=4","p":"pieces/black_pawn.png"};
 let history=[initial()],selection=-1,cursor=-1,promotions=null,last=null,notation=[],busy=false,generation=0;
 const $=id=>document.getElementById(id),state=()=>history[history.length-1];
 window.addEventListener('error',e=>{const el=$('note');if(el)el.textContent='Game error: '+e.message;});
