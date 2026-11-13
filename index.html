@@ -55,7 +55,7 @@ function cpuMove(s,difficulty){const depth=difficulty==='hard'?3:difficulty==='m
 
 
 const G={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟︎'};
-const ART={"K":"pieces/white_king.png","Q":"pieces/white_queen.png","R":"pieces/white_rook.png","B":"pieces/white_bishop.png","N":"pieces/chrome_knight.png?v=5","P":"pieces/white_pawn.png","k":"pieces/black_king.png","q":"pieces/black_queen.png","r":"pieces/black_rook.png","b":"pieces/black_bishop.png","n":"pieces/black_knight.png?v=5","p":"pieces/black_pawn.png"};
+const ART={"K":"pieces/chrome_king.png?v=6","Q":"pieces/chrome_queen.png?v=6","R":"pieces/chrome_rook.png?v=6","B":"pieces/chrome_bishop.png?v=6","N":"pieces/chrome_knight.png?v=6","P":"pieces/chrome_pawn.png?v=6","k":"pieces/black_king.png?v=6","q":"pieces/black_queen.png?v=6","r":"pieces/black_rook.png?v=6","b":"pieces/black_bishop.png?v=6","n":"pieces/black_knight.png?v=6","p":"pieces/black_pawn.png?v=6"};
 let history=[initial()],selection=-1,cursor=-1,promotions=null,last=null,notation=[],busy=false,generation=0;
 const $=id=>document.getElementById(id),state=()=>history[history.length-1];
 window.addEventListener('error',e=>{const el=$('note');if(el)el.textContent='Game error: '+e.message;});
