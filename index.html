@@ -78,6 +78,12 @@ body.cpu-mode #topClockRow,body.cpu-mode #bottomClockRow,body.cpu-mode #desktopT
 .result-dialog .result-detail{font-size:13px;color:#94adc2;margin-bottom:19px}
 .result-dialog .result-action{width:100%;min-height:44px;background:linear-gradient(#17649f,#0d3558);border:1px solid #1689d7;color:#fff;border-radius:5px;font-weight:600}
 
+/* Setup is unavailable once a move has been made; New Game and Undo stay interactive. */
+.match-started .mobile-setup label:has(select),
+.match-started .panel label.field:has(select){opacity:.43;filter:grayscale(1);cursor:not-allowed}
+.match-started .mobile-setup label:has(select) select,
+.match-started .panel label.field:has(select) select{pointer-events:none;cursor:not-allowed}
+.match-started .new-game-button,.match-started #undo,.match-started [data-action="undo"]{opacity:1;pointer-events:auto;filter:none}
 /* Locked setup controls during an active match. Only New Game remains available. */
 .match-started select:disabled,.match-started button:disabled:not(.sq){opacity:.32!important;filter:grayscale(1);cursor:not-allowed!important;box-shadow:none!important}
 .match-started .nav:disabled{background:#141b24!important;border-color:#26313e!important;color:#6c7a89!important}
@@ -250,15 +256,16 @@ document.querySelectorAll('[data-action=undo]').forEach(b=>b.onclick=()=> $('und
 let newGameReturnFocus=null;
 function closeNewGameDialog(){ $('newGameConfirm').hidden=true;document.removeEventListener('keydown',newGameDialogKeys);if(newGameReturnFocus?.isConnected)newGameReturnFocus.focus(); }
 function newGameDialogKeys(e){if(e.key==='Escape'){e.preventDefault();closeNewGameDialog();}else if(e.key==='Tab'){const a=$('cancelNewGame'),b=$('confirmNewGame');if(e.shiftKey&&document.activeElement===a){e.preventDefault();b.focus();}else if(!e.shiftKey&&document.activeElement===b){e.preventDefault();a.focus();}}}
-function requestNewGame(){if(history.length<=1){restart();return;}newGameReturnFocus=document.activeElement;$('newGameConfirm').hidden=false;document.addEventListener('keydown',newGameDialogKeys);$('cancelNewGame').focus();}
+function resetToWhiteAndRestart(){ $('color').value='white';$('mobileColor').value='white';restart();}
+function requestNewGame(){if(history.length<=1){resetToWhiteAndRestart();return;}newGameReturnFocus=document.activeElement;$('newGameConfirm').hidden=false;document.addEventListener('keydown',newGameDialogKeys);$('cancelNewGame').focus();}
 $('resultClose').onclick=()=>{$('gameResult').hidden=true;};
 $('cancelNewGame').onclick=closeNewGameDialog;
-$('confirmNewGame').onclick=()=>{closeNewGameDialog();restart();};
+$('confirmNewGame').onclick=()=>{closeNewGameDialog();resetToWhiteAndRestart();};
 document.querySelectorAll('[data-action=restart]').forEach(b=>b.onclick=requestNewGame);$('restart').onclick=requestNewGame;$('mode').onchange=()=>{if(history.length===1){$('mobileMode').value=$('mode').value;restart();}};$('color').onchange=()=>{if(history.length===1)restart();};$('difficulty').onchange=()=>{if(history.length===1)restart();};
 $('navNew').onclick=requestNewGame;$('navCpu').onclick=()=>{if(history.length>1)return;$('mode').value='cpu';$('mobileMode').value='cpu';restart();};$('navPvp').onclick=()=>{if(history.length>1)return;$('mode').value='pvp';$('mobileMode').value='pvp';restart();};$('navSettings').onclick=()=>{if(history.length>1)return;$('difficulty').focus();$('difficulty').scrollIntoView({behavior:'smooth',block:'center'});};
 $('undo').onclick=()=>{if(history.length<=1||busy||clockLoser)return;clockSync();generation++;history.pop();notation.pop();clockRemaining=clockSnapshots.pop()||{1:clockLimit(),'-1':clockLimit()};if($('mode').value==='cpu'&&history.length>1&&!isHuman()){history.pop();notation.pop();clockRemaining=clockSnapshots.pop()||{1:clockLimit(),'-1':clockLimit()};}clockStamp=clockEnabled()&&history.length>1?performance.now():null;selection=-1;last=null;promotions=null;announcedResult="";$('gameResult').hidden=true;render();scheduleCpu();};
 document.addEventListener('keydown',e=>{if(['SELECT','INPUT'].includes(document.activeElement.tagName))return;let r=cursor<0?7:cursor>>4,c=cursor<0?0:cursor&7;if(e.key==='ArrowUp')r=Math.max(0,r-1);else if(e.key==='ArrowDown')r=Math.min(7,r+1);else if(e.key==='ArrowLeft')c=Math.max(0,c-1);else if(e.key==='ArrowRight')c=Math.min(7,c+1);else if(e.key==='Enter'||e.key===' '){e.preventDefault();choose(r*16+c);return;}else return;e.preventDefault();cursor=r*16+c;render();});
-$('timeControl').onchange=()=>{$('mobileTime').value=$('timeControl').value;restart();};$('mobileTime').onchange=()=>{$('timeControl').value=$('mobileTime').value;restart();};
+$('timeControl').onchange=()=>{if(history.length>1)return;$('mobileTime').value=$('timeControl').value;restart();};$('mobileTime').onchange=()=>{if(history.length>1)return;$('timeControl').value=$('mobileTime').value;restart();};
 setInterval(()=>{if(clockStamp!==null){clockSync();renderClocks();}},100);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){clockSync();renderClocks();}});
 try{restart();}catch(e){$('note').textContent='Startup error: '+e.message;console.error(e);}
