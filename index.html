@@ -212,29 +212,36 @@ let movingPieceOverlay=null;
 function clearPieceAnimation(){if(movingPieceOverlay){movingPieceOverlay.remove();movingPieceOverlay=null;}}
 function animatePieceMove(m,oldPosition){
   clearPieceAnimation();
-  if(!oldPosition||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(!oldPosition)return;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const board=$('board'),flip=$('mode').value==='cpu'&&$('color').value==='black';
-  const from=m[0],to=m[1],fromRow=from>>4,fromCol=from&7,toRow=to>>4,toCol=to&7;
-  const displayRow=i=>flip?7-i:i;
-  const origin=board.children[displayRow(fromRow)*8+displayRow(fromCol)];
-  const destination=board.children[displayRow(toRow)*8+displayRow(toCol)];
-  if(!origin||!destination)return;
-  const destImage=destination.querySelector('img.piece');
+  const from=m[0],to=m[1];
+  const index=i=>{const row=i>>4,col=i&7;return (flip?7-row:row)*8+(flip?7-col:col);};
+  const destination=board.children[index(to)];
+  const destImage=destination&&destination.querySelector('img.piece');
   if(!destImage)return;
-  const end=destination.getBoundingClientRect(),start=oldPosition.rect;
+  const start=oldPosition.rect,end=destination.getBoundingClientRect();
   if(!start.width||!end.width)return;
   const overlay=document.createElement('img');
   overlay.src=oldPosition.src;overlay.alt='';overlay.setAttribute('aria-hidden','true');
-  overlay.style.cssText='position:fixed;z-index:9999;pointer-events:none;object-fit:contain;filter:drop-shadow(1px 3px 2px #0009);transition:none;will-change:transform;';
-  const inset=start.width*.04;
+  const inset=start.width*.03;
+  overlay.style.cssText='position:fixed;z-index:9999;pointer-events:none;object-fit:contain;filter:drop-shadow(1px 3px 2px #0009);will-change:transform;transition:none;';
   overlay.style.left=(start.left+inset)+'px';overlay.style.top=(start.top+inset)+'px';
   overlay.style.width=(start.width-inset*2)+'px';overlay.style.height=(start.height-inset*2)+'px';
   document.body.appendChild(overlay);movingPieceOverlay=overlay;
   destImage.style.visibility='hidden';
   const dx=end.left-start.left,dy=end.top-start.top;
-  const finish=()=>{if(movingPieceOverlay===overlay)movingPieceOverlay=null;overlay.remove();destImage.style.visibility='';};
-  const animation=overlay.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px, ${dy}px)`}],{duration:190,easing:'cubic-bezier(.22,.7,.3,1)',fill:'forwards'});
-  animation.onfinish=finish;animation.oncancel=finish;
+  let done=false;
+  const finish=()=>{if(done)return;done=true;if(movingPieceOverlay===overlay)movingPieceOverlay=null;overlay.remove();if(destImage.isConnected)destImage.style.visibility='';};
+  // CSS transitions work in older WebKit/iDrive browsers where Element.animate may be absent.
+  overlay.getBoundingClientRect(); // commit the starting position
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(done||movingPieceOverlay!==overlay)return;
+    overlay.style.transition='transform 240ms cubic-bezier(.22,.7,.3,1)';
+    overlay.style.transform='translate3d('+dx+'px,'+dy+'px,0)';
+  }));
+  overlay.addEventListener('transitionend',finish,{once:true});
+  setTimeout(finish,380);
 }
 function getMovingPiecePosition(m){
   const board=$('board'),flip=$('mode').value==='cpu'&&$('color').value==='black';
@@ -258,7 +265,7 @@ function scheduleCpu(){
     const m=cpuMove(state(),$('difficulty').value);
     if(token!==generation||isHuman())return;
     busy=false;if(m)move(m);else render();
-  },120);
+  },300);
 }
 function renderCaptures(){
   const mode=$('mode').value,playerSide=mode==='cpu'&&$('color').value==='black'?-1:1;
