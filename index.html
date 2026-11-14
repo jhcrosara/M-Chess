@@ -214,7 +214,17 @@ const isHuman=()=> $('mode').value==='pvp'||state().t===($('color').value==='whi
 function restart(){announcedResult="";$('gameResult').hidden=true;generation++;clockRemaining={1:clockLimit(),'-1':clockLimit()};clockSnapshots=[];clockStamp=null;clockLoser=0;history=[initial()];selection=-1;cursor=-1;promotions=null;last=null;notation=[];busy=false;render();scheduleCpu();}
 function move(m){if(!m||clockLoser)return;clockSync();if(clockLoser)return;let old=state();clockSnapshots.push({...clockRemaining});notation.push(moveSAN(old,m));history.push(apply(old,m));clockStamp=clockEnabled()&&!status(state(),history).over?performance.now():null;last=m;selection=-1;promotions=null;render();scheduleCpu();}
 function choose(i){if(busy||promotions||clockLoser||status(state(),history).over||!isHuman())return;cursor=i;const s=state(),moves=legal(s);if(selection>=0){const options=moves.filter(m=>m[0]===selection&&m[1]===i);if(options.length>1){promotions=options;render();return;}if(options.length===1){move(options[0]);return;}}selection=side(s.b[i])===s.t?(selection===i?-1:i):-1;render();}
-function scheduleCpu(){if($('mode').value!=='cpu'||isHuman()||clockLoser||status(state(),history).over)return;const token=generation;busy=true;render();setTimeout(()=>{if(token!==generation)return;const m=cpuMove(state(),$('difficulty').value);busy=false;if(m)move(m);else render();},120);}
+function scheduleCpu(){
+  if($('mode').value!=='cpu'||isHuman()||clockLoser||status(state(),history).over)return;
+  const token=generation;busy=true;render();
+  setTimeout(()=>{
+    // A previous game's queued CPU move must never affect a new game.
+    if(token!==generation||$('mode').value!=='cpu'||isHuman()||clockLoser||status(state(),history).over)return;
+    const m=cpuMove(state(),$('difficulty').value);
+    if(token!==generation||isHuman())return;
+    busy=false;if(m)move(m);else render();
+  },120);
+}
 function renderCaptures(){
   const mode=$('mode').value,playerSide=mode==='cpu'&&$('color').value==='black'?-1:1;
   const capturedBy={1:[],'-1':[]};
@@ -256,7 +266,13 @@ document.querySelectorAll('[data-action=undo]').forEach(b=>b.onclick=()=> $('und
 let newGameReturnFocus=null;
 function closeNewGameDialog(){ $('newGameConfirm').hidden=true;document.removeEventListener('keydown',newGameDialogKeys);if(newGameReturnFocus?.isConnected)newGameReturnFocus.focus(); }
 function newGameDialogKeys(e){if(e.key==='Escape'){e.preventDefault();closeNewGameDialog();}else if(e.key==='Tab'){const a=$('cancelNewGame'),b=$('confirmNewGame');if(e.shiftKey&&document.activeElement===a){e.preventDefault();b.focus();}else if(!e.shiftKey&&document.activeElement===b){e.preventDefault();a.focus();}}}
-function resetToWhiteAndRestart(){ $('color').value='white';$('mobileColor').value='white';restart();}
+function resetToWhiteAndRestart(){
+  // Invalidate any pending CPU turn before resetting the board.
+  generation++; busy=false;
+  $('color').value='white';
+  $('mobileColor').value='white';
+  restart();
+}
 function requestNewGame(){if(history.length<=1){resetToWhiteAndRestart();return;}newGameReturnFocus=document.activeElement;$('newGameConfirm').hidden=false;document.addEventListener('keydown',newGameDialogKeys);$('cancelNewGame').focus();}
 $('resultClose').onclick=()=>{$('gameResult').hidden=true;};
 $('cancelNewGame').onclick=closeNewGameDialog;
