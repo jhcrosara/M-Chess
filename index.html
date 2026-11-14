@@ -258,7 +258,25 @@ window.addEventListener('error',e=>{const el=$('note');if(el)el.textContent='Gam
 const isHuman=()=> $('mode').value==='pvp'||state().t===($('color').value==='white'?1:-1);
 function restart(){clearPieceAnimation();announcedResult="";$('gameResult').hidden=true;generation++;clockRemaining={1:clockLimit(),'-1':clockLimit()};clockSnapshots=[];clockStamp=null;clockLoser=0;history=[initial()];selection=-1;cursor=-1;promotions=null;last=null;notation=[];busy=false;$('promotionDialog').hidden=true;render();scheduleCpu();}
 function move(m){if(!m||clockLoser)return;clockSync();if(clockLoser)return;let old=state(),oldPosition=getMovingPiecePosition(m);clockSnapshots.push({...clockRemaining});notation.push(moveSAN(old,m));history.push(apply(old,m));clockStamp=clockEnabled()&&!status(state(),history).over?performance.now():null;last=m;selection=-1;promotions=null;render();animatePieceMove(m,oldPosition);scheduleCpu();}
-function choose(i){if(busy||promotions||clockLoser||status(state(),history).over||!isHuman())return;cursor=i;const s=state(),moves=legal(s);if(selection>=0){const options=moves.filter(m=>m[0]===selection&&m[1]===i);if(options.length>1){promotions=options;render();return;}if(options.length===1){move(options[0]);return;}}selection=side(s.b[i])===s.t?(selection===i?-1:i):-1;render();}
+function choose(i){
+ if(busy||promotions||clockLoser||status(state(),history).over||!isHuman())return;
+ cursor=i;
+ const s=state(),moves=legal(s);
+ if(selection>=0){
+  const options=moves.filter(m=>m[0]===selection&&m[1]===i);
+  if(options.some(m=>m[2])){
+   promotions=options.filter(m=>m[2]);
+   render();return;
+  }
+  if(options.length===1){move(options[0]);return;}
+  // A pawn cannot move straight ahead onto an occupied square; show why.
+  if(s.b[selection].toLowerCase()==='p'&&i===selection-16*s.t&&s.b[i]!=='.'){
+   render();$('note').textContent='That square is occupied. Pawns move forward only to empty squares; capture diagonally.';return;
+  }
+ }
+ selection=side(s.b[i])===s.t?(selection===i?-1:i):-1;
+ render();
+}
 function scheduleCpu(){
   if($('mode').value!=='cpu'||isHuman()||clockLoser||status(state(),history).over)return;
   const token=generation;busy=true;render();
